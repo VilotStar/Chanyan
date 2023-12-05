@@ -9,6 +9,7 @@ import 'package:flutter_chan/Models/post.dart';
 import 'package:flutter_chan/blocs/gallery_model.dart';
 import 'package:flutter_chan/blocs/saved_attachments_model.dart';
 import 'package:flutter_chan/blocs/theme.dart';
+import 'package:flutter_chan/blocs/thread_model.dart';
 import 'package:flutter_chan/widgets/image_viewer.dart';
 import 'package:flutter_chan/widgets/webm_player.dart';
 import 'package:preload_page_view/preload_page_view.dart';
@@ -25,6 +26,7 @@ class MediaPage extends StatefulWidget {
     required this.allPosts,
     this.isAsset = false,
     this.directory,
+    this.threadId,
   }) : super(key: key);
 
   final String video;
@@ -32,6 +34,7 @@ class MediaPage extends StatefulWidget {
   final List<Post> allPosts;
   final bool isAsset;
   final Directory? directory;
+  final int? threadId;
 
   @override
   State<MediaPage> createState() => _MediaPageState();
@@ -47,9 +50,18 @@ class _MediaPageState extends State<MediaPage> {
 
   List<Media> media = [];
 
-  void onPageChanged(int i, String media, GalleryProvider gallery) {
+  void onPageChanged(int i, String media, GalleryProvider gallery,
+      ThreadProvider threadProvider) {
     gallery.setCurrentPage(i);
     gallery.setCurrentMedia(media);
+
+    if (widget.threadId != null) {
+      threadProvider.addSeenPost(
+        widget.threadId ?? 0,
+        widget.board ?? '',
+        widget.allPosts[i].no ?? 0,
+      );
+    }
 
     setState(() {
       index = i;
@@ -65,7 +77,6 @@ class _MediaPageState extends State<MediaPage> {
   Widget getMediaWidget(int i) {
     if (widget.isAsset) {
       if (media[i].ext == '.webm') {
-        print(widget.directory);
         return VLCPlayer(
           board: widget.board,
           video: media[i].videoName,
@@ -141,6 +152,7 @@ class _MediaPageState extends State<MediaPage> {
     final theme = Provider.of<ThemeChanger>(context);
     final gallery = Provider.of<GalleryProvider>(context);
     final savedAttachments = Provider.of<SavedAttachmentsProvider>(context);
+    final threadProvider = Provider.of<ThreadProvider>(context);
 
     isSaved = false;
     for (final element in savedAttachments.getSavedAttachments()) {
@@ -325,9 +337,10 @@ class _MediaPageState extends State<MediaPage> {
         ),
       ),
       body: PreloadPageView.custom(
-        preloadPagesCount: 1,
+        preloadPagesCount: 2,
         controller: controller,
-        onPageChanged: (i) => onPageChanged(i, media[i].videoName, gallery),
+        onPageChanged: (i) =>
+            onPageChanged(i, media[i].videoName, gallery, threadProvider),
         childrenDelegate: SliverChildBuilderDelegate(
           (context, i) {
             return getMediaWidget(i);

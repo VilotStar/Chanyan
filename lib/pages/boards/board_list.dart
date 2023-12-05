@@ -6,6 +6,7 @@ import 'package:flutter_chan/Models/post.dart';
 import 'package:flutter_chan/blocs/favorite_model.dart';
 import 'package:flutter_chan/blocs/settings_model.dart';
 import 'package:flutter_chan/blocs/theme.dart';
+import 'package:flutter_chan/blocs/thread_model.dart';
 import 'package:flutter_chan/pages/boards/board_tile.dart';
 import 'package:flutter_chan/pages/bookmarks/bookmarks.dart';
 import 'package:flutter_chan/pages/savedAttachments/saved_attachments.dart';
@@ -50,6 +51,7 @@ class BoardListState extends State<BoardList> {
     final theme = Provider.of<ThemeChanger>(context);
     final favorites = Provider.of<FavoriteProvider>(context);
     final settings = Provider.of<SettingsProvider>(context);
+    Provider.of<ThreadProvider>(context);
 
     Future<bool> openURL() async {
       if (controller.text.isEmpty) {

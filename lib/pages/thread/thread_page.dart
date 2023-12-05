@@ -5,6 +5,7 @@ import 'package:flutter_chan/Models/bookmark.dart';
 import 'package:flutter_chan/Models/post.dart';
 import 'package:flutter_chan/blocs/gallery_model.dart';
 import 'package:flutter_chan/blocs/theme.dart';
+import 'package:flutter_chan/blocs/thread_model.dart';
 import 'package:flutter_chan/pages/bookmark_button.dart';
 import 'package:flutter_chan/pages/thread/thread_page_post.dart';
 import 'package:flutter_chan/services/string.dart';
@@ -47,6 +48,9 @@ class ThreadPageState extends State<ThreadPage> {
   late Bookmark favorite;
   late Post currentPage;
 
+  var finishedLoading = false;
+  var isInit = true;
+
   @override
   void initState() {
     super.initState();
@@ -60,6 +64,37 @@ class ThreadPageState extends State<ThreadPage> {
       imageUrl: '${widget.post.tim}s.jpg',
       board: widget.board,
     );
+  }
+
+  void goToLastSeenPost(context) {
+    if (!finishedLoading || !isInit || !itemScrollController.isAttached) {
+      return;
+    }
+
+    isInit = false;
+
+    final threadProvider = Provider.of<ThreadProvider>(context, listen: false);
+
+    final seenPost =
+        threadProvider.getSeenPostFromThread(widget.thread, widget.board);
+
+    var latestIndex = 0;
+
+    for (final post in seenPost.postIDs) {
+      final postIndex = allPosts.indexWhere((element) => element.no == post);
+      if (postIndex > latestIndex) {
+        latestIndex = postIndex;
+      }
+    }
+
+    if (latestIndex > 0) {
+      itemScrollController.scrollTo(
+        index: latestIndex,
+        alignment: 0,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOutCubic,
+      );
+    }
   }
 
   void loadThread() {
@@ -189,7 +224,11 @@ class ThreadPageState extends State<ThreadPage> {
                   onReload: () => loadThread(),
                 );
               } else {
+                finishedLoading = true;
                 allPosts = snapshot.data ?? [];
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  goToLastSeenPost(context);
+                });
 
                 return SafeArea(
                   top: true,
